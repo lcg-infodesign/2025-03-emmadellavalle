@@ -1,8 +1,223 @@
-html, body {
-  margin: 0;
-  padding: 0;
+/* theme: dark B - mantiene proporzioni visuali eleganti */
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;font-family:"Poppins",system-ui,-apple-system,"Segoe UI",Roboto,Arial}
+body{
+  background:#0e0f12; /* scelta B: grigio molto scuro */
+  color:#e6eef6;
+  -webkit-font-smoothing:antialiased;
+  display:flex;flex-direction:column;align-items:center;
 }
 
-canvas {
-  display: block;
+/* header */
+header {
+  max-width: 1200px;
+  width: 100%;
+  padding: 20px 18px 6px;
+  margin: 0 auto;
+  text-align: center; /* centrato */
+}
+
+h1 {
+  margin: 0 0 6px;
+  font-size: 28px;
+  font-weight: 700;
+  color: #d3d7de; /* grigio chiaro */
+}
+
+header p {
+  margin: 0;
+  color: #c6d3df;
+  font-size: 14px;
+}
+
+/* main card */
+#main{
+  max-width:1200px;width:100%;padding:18px;margin:8px auto 36px
+}
+#map-card{
+  position:relative;
+  background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  border-radius:12px;padding:18px;
+  box-shadow:0 10px 30px rgba(2,6,23,0.6);
+  display:grid;
+  grid-template-columns:1fr;
+  gap:12px;
+  transition:all 0.4s ease;
+}
+
+/* wrapper for canvas */
+.canvas-wrapper {
+    width: 90vw;
+    max-width: 1800px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 35px;
+}
+
+/* --- ALTITUDE LEGEND --- */
+#altitude-legend {
+  background: rgba(0,0,0,0.35);
+  border-radius: 10px;
+  padding: 10px;
+  color: #e6eef6;
+  font-size: 13px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.45);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  width: 90px;
+  transition: all 0.4s ease;
+}
+
+#altitude-legend h4 {
+  margin: 0;
+  font-size: 13px;
+  order: 0; /* Titolo sempre in alto */
+}
+
+#altitude-legend .bar {
+  width: 18px;
+  height: 160px;
+  border-radius: 8px;
+  background: linear-gradient(to bottom, #FFE066 0%, #CC3300 50%, #4A001A 100%);
+  border: 1px solid rgba(255,255,255,0.06);
+  box-shadow: inset 0 2px 8px rgba(255,255,255,0.03);
+}
+
+#altitude-legend .labels {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 12px;
+  gap: 4px;
+}
+
+/* --- Layout desktop: barra verticale a destra centrata --- */
+@media (min-width: 801px) {
+  #map-card {
+    grid-template-columns: 1fr auto;
+    align-items: center; /* ✅ barra centrata verticalmente rispetto alla mappa */
+  }
+
+  #altitude-legend {
+    position: relative;
+    margin-left: 16px; /* distanza dalla mappa */
+    align-self: center; /* ✅ barra centrata nella griglia */
+    flex-direction: column;
+  }
+
+  #altitude-legend h4 {
+    order: 0;
+  }
+
+  #altitude-legend .labels {
+    order: 1;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  #altitude-legend .labels .top {
+    order: 0;
+  }
+
+  #altitude-legend .bar {
+    order: 1;
+  }
+
+  #altitude-legend .labels .bottom {
+    order: 2;
+  }
+}
+
+/* --- Layout mobile: barra orizzontale sotto la mappa --- */
+@media (max-width: 800px) {
+  #map-card {
+    grid-template-columns: 1fr;
+  }
+
+  #altitude-legend {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    margin-top: 12px;
+    gap: 8px;
+  }
+
+  /* Riga sopra: titolo */
+  #altitude-legend h4 {
+    order: 0;
+  }
+
+  /* Riga sotto: +7000, barra orizzontale, -6000 */
+  #altitude-legend .labels {
+    order: 1;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+  }
+
+  #altitude-legend .labels .top {
+    order: 0; /* +7000m a sinistra */
+  }
+
+  #altitude-legend .bar {
+    order: 1; /* barra orizzontale al centro */
+    width: 120px;
+    height: 18px;
+    background: linear-gradient(to right, #FFE066 0%, #CC3300 50%, #4A001A 100%);
+    border-radius: 8px;
+  }
+
+  #altitude-legend .labels .bottom {
+    order: 2; /* -6000m a destra */
+  }
+}
+
+/* tooltip card style B */
+#tooltip{
+  position:absolute;
+  z-index:60;
+  min-width:220px;
+  max-width:320px;
+  background:linear-gradient(180deg, rgba(10,18,26,0.96), rgba(20,28,36,0.96));
+  color:#dff1ff;border-radius:10px;padding:12px;
+  box-shadow:0 12px 36px rgba(0,0,0,0.6);
+  border:1px solid rgba(255,255,255,0.03);
+  display:none;pointer-events:none;
+}
+#tooltip .tt-title{
+  font-weight:700;margin-bottom:6px;color:#fff
+}
+#tooltip .tt-body{
+  font-size:13px;color:#cfe6ff;line-height:1.35
+}
+#tooltip .meta{
+  font-size:12px;color:#bcd4e8;margin-top:8px
+}
+
+/* footer */
+footer {
+    width: 100%;
+    text-align: center;
+    color: white;
+    font-size: 14px;
+    margin-top: 30px;
+    padding-bottom: 25px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+footer .logo-poli {
+    width: 130px;
+    height: auto;
+    opacity: 0.85;
 }

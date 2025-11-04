@@ -1,18 +1,51 @@
 <!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Visione d’insieme – Vulcani del mondo</title>
 
-    <title>Sketch</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.9.0/lib/p5.min.js"></script>
+  <script src="sketch.js" defer></script>
+</head>
+<body>
+  <header>
+    <h1>Visione d’insieme: Vulcani del mondo</h1>
+    <p>
+      Ogni punto rappresenta un vulcano. <strong>Dimensione</strong>: proporzionale all’altitudine •
+      <strong>Colore</strong>: scala altitudine (rosso → arancione → giallo)
+    </p>
+  </header>
 
-    <link rel="stylesheet" type="text/css" href="style.css">
+  <main id="main">
+    <section id="map-card">
+      <div id="canvas-wrapper"></div>
 
-    <script src="libraries/p5.min.js"></script>
-    <script src="libraries/p5.sound.min.js"></script>
-  </head>
+      <!-- vertical altitude legend -->
+      <aside id="altitude-legend" aria-hidden="true">
+        <h4>Elevator</h4>
+        <div class="top">+7000 m</div>
+        <div class="bar"></div>
+        <div class="labels">
+          
+          <div class="bottom">-6000 m</div>
+        </div>
+      </aside>
 
-  <body>
-    <script src="sketch.js"></script>
-  </body>
+      <!-- tooltip card (stile B) -->
+      <div id="tooltip" role="dialog" aria-hidden="true">
+        <div class="tt-title">Titolo</div>
+        <div class="tt-body"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    Progetto di Informatica Applicata – “Visione d’insieme” (2025) - Emma Della Valle
+     <img src="logo politecnico.png" alt="Logo Politecnico di Milano" class="logo-poli">
+ 
+  </footer>
+</body>
 </html>
