@@ -1,11 +1,12 @@
 // === Variabili globali ===
-let table;          // tabella CSV con i dati dei vulcani
-let volcanoes = []; // array che conterrà tutti i vulcani elaborati
-let worldImg;       // immagine della mappa del mondo
+let table;          
+let volcanoes = []; 
+let worldImg;       
 
 // costanti per i file da caricare
-const MAP_FILE = "mondo esteso.png";
+const MAP_FILE = "mondoesteso6.png";   // ✅ nuovo nome file
 const CSV_FILE = "volcanoes-2025-10-27 - Es.3 - Original Data.csv";
+
 
 let cnv;             // oggetto canvas p5.js
 let wrapper;         // elemento HTML che contiene il canvas
