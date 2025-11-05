@@ -1,68 +1,93 @@
+// === Variabili globali ===
+let table;          // tabella CSV con i dati dei vulcani
+let volcanoes = []; // array che conterrà tutti i vulcani elaborati
+let worldImg;       // immagine della mappa del mondo
 
-let table;
-let volcanoes = [];
-let worldImg;
+// costanti per i file da caricare
 const MAP_FILE = "mondo esteso.png";
 const CSV_FILE = "volcanoes-2025-10-27 - Es.3 - Original Data.csv";
 
-let cnv;               // p5 canvas
-let wrapper;           // wrapper DOM
-let tooltipDiv;
+let cnv;             // oggetto canvas p5.js
+let wrapper;         // elemento HTML che contiene il canvas
+let tooltipDiv;      // riferimento al tooltip (scheda informativa)
 
+// === preload() ===
+// funzione speciale di p5.js: viene eseguita PRIMA di setup()
+// serve per caricare file (immagini, CSV, font, ecc.)
 function preload() {
+  // carico la tabella CSV dei vulcani (con intestazioni)
   table = loadTable(CSV_FILE, "csv", "header");
-  worldImg = loadImage(MAP_FILE,
-  () => console.log("✔️ Mappa caricata con successo"),
-  () => console.error("❌ Errore nel caricamento della mappa: controlla nome e percorso")
-);
 
+  // carico l’immagine della mappa
+  worldImg = loadImage(
+    MAP_FILE,
+    () => console.log("Mappa caricata con successo"), // callback se va tutto bene
+    () => console.error("Errore nel caricamento della mappa: controlla nome e percorso") // callback errore
+  );
 }
 
+// === setup() ===
+// funzione chiamata una volta all’inizio
 function setup() {
+  // prendo dal DOM il contenitore del canvas
   wrapper = document.getElementById("canvas-wrapper");
+
+  // creo il canvas con proporzioni corrette rispetto all’immagine
   createResponsiveCanvas();
 
+  // stile base per i disegni
   noStroke();
   textFont("Poppins");
 
+  // carico e organizzo i dati dei vulcani dal CSV
   loadVolcanoData();
 
-  // tooltip element
+  // salvo il riferimento al tooltip nel DOM
   tooltipDiv = document.getElementById("tooltip");
 
-  // events
+  // === Event listeners ===
+  // mostro il tooltip quando il mouse si muove sul canvas
   cnv.elt.addEventListener("mousemove", onMouseMove);
+
+  // nascondo il tooltip quando il mouse esce dal canvas
   cnv.elt.addEventListener("mouseleave", () => hideTooltip());
+
+  // ridisegno tutto quando la finestra viene ridimensionata
   window.addEventListener("resize", () => {
     createResponsiveCanvas();
     redrawAll();
   });
 
-  // initial draw
+  // disegno iniziale della mappa e dei punti
   redrawAll();
 }
 
-// create or resize canvas to preserve image aspect ratio (no deformation)
+// === createResponsiveCanvas() ===
+// crea o ridimensiona il canvas mantenendo le proporzioni dell’immagine
 function createResponsiveCanvas() {
-  const wrapperW = Math.max(200, wrapper.clientWidth);
-  // keep image ratio
-  const imgRatio = worldImg.width / worldImg.height;
-  const desiredW = wrapperW;
-  const desiredH = Math.round(desiredW / imgRatio);
+  const wrapperW = Math.max(200, wrapper.clientWidth); // larghezza disponibile
+  const imgRatio = worldImg.width / worldImg.height;   // rapporto larghezza/altezza dell’immagine
+  const desiredW = wrapperW;                           // canvas largo quanto il contenitore
+  const desiredH = Math.round(desiredW / imgRatio);    // altezza proporzionale
 
   if (cnv) {
+    // se il canvas esiste già, lo ridimensiono
     resizeCanvas(desiredW, desiredH);
   } else {
+    // altrimenti lo creo e lo inserisco nel wrapper
     cnv = createCanvas(desiredW, desiredH);
     cnv.parent("canvas-wrapper");
   }
 }
 
-// load CSV into structured array
+// === loadVolcanoData() ===
+// legge i dati del CSV e crea un array di oggetti “vulcano”
 function loadVolcanoData() {
-  volcanoes = [];
-  // header provided: Volcano Number,Volcano Name,Country,Location,Latitude,Longitude,Elevation (m),Type,TypeCategory,Status,Last Known Eruption
+  volcanoes = []; // resetto l’array
+
+  // ciclo su tutte le righe della tabella CSV
   for (let r = 0; r < table.getRowCount(); r++) {
+    // estraggo le informazioni (con più nomi alternativi per compatibilità)
     let name = table.getString(r, "Volcano Name") || table.getString(r, "Volcano_Name") || "Sconosciuto";
     let country = table.getString(r, "Country") || "";
     let location = table.getString(r, "Location") || "";
@@ -74,12 +99,14 @@ function loadVolcanoData() {
     let status = table.getString(r, "Status") || "";
     let last = table.getString(r, "Last Known Eruption") || "";
 
+    // se latitudine o longitudine non sono numeriche, salto la riga
     if (isNaN(lat) || isNaN(lon)) continue;
 
-    // radius 3 -> 20 px mapped from elevation range -6000..7000
+    // mappo l’altitudine in un raggio (da 3 a 20 pixel)
     let rSize = map(constrain(elev || 0, -6000, 7000), -6000, 7000, 3, 20);
-    rSize = constrain(rSize, 3, 26);
+    rSize = constrain(rSize, 3, 26); // limito il valore massimo
 
+    // salvo l’oggetto vulcano con tutti i dati
     volcanoes.push({
       name, country, location,
       lat, lon, elev, type, category, status, last,
@@ -88,91 +115,110 @@ function loadVolcanoData() {
   }
 }
 
-// redraw map + points
+// === redrawAll() ===
+// ridisegna completamente la mappa e tutti i punti
 function redrawAll() {
-  clear();
-  background(14,15,18);
-  imageMode(CORNER);
-  // image is drawn to fill canvas exactly (canvas created with same aspect ratio)
-  image(worldImg, 0, 0, width, height);
+  clear();                    // pulisco il canvas
+  background(14,15,18);       // colore di sfondo
+  imageMode(CORNER);          // disegno l’immagine dall’angolo in alto a sinistra
+  image(worldImg, 0, 0, width, height); // disegno la mappa grande quanto il canvas
 
-  // draw each volcano
+  // disegno tutti i vulcani
   for (let v of volcanoes) {
-    const p = projectToPixel(v.lon, v.lat);
-    drawVolcanoPoint(p.x, p.y, v);
+    const p = projectToPixel(v.lon, v.lat); // converto coordinate geografiche in pixel
+    drawVolcanoPoint(p.x, p.y, v);          // disegno il punto
   }
 }
 
-// draw single volcano point with color from elevation gradient
+// === drawVolcanoPoint() ===
+// disegna un singolo punto sulla mappa
 function drawVolcanoPoint(x, y, v) {
-  const elev = (v.elev == null || isNaN(v.elev)) ? 0 : v.elev;
-  const col = elevationColor(elev);
+  const elev = (v.elev == null || isNaN(v.elev)) ? 0 : v.elev; // gestione valori nulli
+  const col = elevationColor(elev); // calcolo colore in base all’altitudine
+
+  // effetto ombra per dare profondità
   drawingContext.shadowBlur = 10;
   drawingContext.shadowColor = "rgba(0,0,0,0.35)";
   stroke(0, 40);
   strokeWeight(0.6);
   fill(col);
-  ellipse(x, y, v.rSize, v.rSize);
-  drawingContext.shadowBlur = 0;
+  ellipse(x, y, v.rSize, v.rSize); // disegno il cerchio del vulcano
+  drawingContext.shadowBlur = 0;   // disattivo l’ombra
 }
 
-// color gradient: -6000 -> +7000 maps to 0..1, then two-stage lerp (dark->orange, orange->yellow)
+// === elevationColor() ===
+// restituisce un colore che varia in base all’altitudine (dal bordeaux al giallo)
 function elevationColor(elev) {
-  const t = constrain(map(elev, -6000, 7000, 0, 1), 0, 1);
-  // colors as p5 color objects
-  const c0 = color("#4A001A"); // deep bordeaux (low)
-  const c1 = color("#CC3300"); // mid (orange/red)
-  const c2 = color("#FFE066"); // high (yellow)
+  const t = constrain(map(elev, -6000, 7000, 0, 1), 0, 1); // normalizzo l’altitudine tra 0 e 1
+  const c0 = color("#4A001A"); // basso → bordeaux scuro
+  const c1 = color("#CC3300"); // medio → arancione/rosso
+  const c2 = color("#FFE066"); // alto → giallo
+
   if (t < 0.5) {
-    // 0..0.5 -> 0..1 between c0 and c1
+    // da 0 a 0.5 → sfumatura tra c0 e c1
     const tt = map(t, 0, 0.5, 0, 1);
     return lerpColor(c0, c1, tt);
   } else {
-    // 0.5..1 -> 0..1 between c1 and c2
+    // da 0.5 a 1 → sfumatura tra c1 e c2
     const tt = map(t, 0.5, 1, 0, 1);
     return lerpColor(c1, c2, tt);
   }
 }
 
-// project equirectangular lon/lat to pixel on displayed image
+// === projectToPixel() ===
+// converte coordinate geografiche (lon/lat) in coordinate pixel sul canvas
 function projectToPixel(lonDeg, latDeg) {
-  // robust normalisation of longitude to [-180, 180]
+  // normalizzo la longitudine in intervallo [-180, 180]
   let L = ((parseFloat(lonDeg) + 180) % 360 + 360) % 360 - 180;
+
+  // converto longitudine e latitudine in coordinate x,y
   const x = map(L, -180, 180, 0, width);
   const y = map(latDeg, 90, -90, 0, height);
   return { x, y };
 }
 
-/* ------------------- tooltip handling ------------------- */
+/* === GESTIONE TOOLTIP ===
+   (scheda che appare al passaggio del mouse) */
 
+// evento chiamato quando il mouse si muove sul canvas
 function onMouseMove(evt) {
-  const rect = cnv.elt.getBoundingClientRect();
-  const mx = evt.clientX - rect.left;
+  const rect = cnv.elt.getBoundingClientRect(); // posizione del canvas nella finestra
+  const mx = evt.clientX - rect.left; // coordinate mouse relative al canvas
   const my = evt.clientY - rect.top;
 
-  // find volcano under cursor
-  let found = null;
+  let found = null; // variabile per il vulcano trovato
+
+  // cerco se il cursore è sopra un punto (entro il suo raggio)
   for (let v of volcanoes) {
     const p = projectToPixel(v.lon, v.lat);
     const d = dist(mx, my, p.x, p.y);
-    if (d <= v.rSize / 2 + 4) { found = { v, p }; break; }
+    if (d <= v.rSize / 2 + 4) { // +4 pixel di tolleranza
+      found = { v, p };
+      break;
+    }
   }
 
+  // se non ho trovato nessun vulcano, nascondo il tooltip
   if (!found) {
     hideTooltip();
     return;
   }
-  // show tooltip slightly to the right of the point (or left if would overflow)
+
+  // mostro il tooltip per il vulcano trovato
   showTooltipFor(found.v, found.p, evt.clientX, evt.clientY);
 }
 
+// mostra il tooltip con le informazioni del vulcano
 function showTooltipFor(v, p, clientX, clientY) {
   if (!tooltipDiv) tooltipDiv = document.getElementById("tooltip");
+
   const title = tooltipDiv.querySelector(".tt-title");
   const body = tooltipDiv.querySelector(".tt-body");
 
+  // titolo del tooltip: nome + paese/località
   title.textContent = `${v.name} (${v.country || v.location || ""})`;
 
+  // testo interno con informazioni formattate
   const latStr = (Math.round(v.lat * 100) / 100).toFixed(2);
   const lonStr = (Math.round(v.lon * 100) / 100).toFixed(2);
   body.innerHTML = `
@@ -184,41 +230,43 @@ function showTooltipFor(v, p, clientX, clientY) {
     <div><strong>Last Known Eruption:</strong> ${v.last || "N/A"}</div>
   `;
 
-  // compute position relative to card, prefer to the right of the point
+  // calcolo posizione del tooltip accanto al cursore
   const cardRect = document.querySelector("#map-card").getBoundingClientRect();
   const ttRect = tooltipDiv.getBoundingClientRect();
-  // clientX/Y come from mouse; we position near the point within the card
-  let left = clientX + 12;
+
+  let left = clientX + 12; // di default a destra del cursore
   let top = clientY + 8;
 
-  // if overflow right, put to left of cursor
+  // se uscirebbe fuori a destra, lo metto a sinistra
   if (left + ttRect.width > cardRect.right) left = clientX - ttRect.width - 18;
+  // se uscirebbe sotto, lo sposto sopra
   if (top + ttRect.height > cardRect.bottom) top = clientY - ttRect.height - 18;
+  // se troppo in alto, lo limito
   if (top < cardRect.top + 6) top = cardRect.top + 6;
 
-  // place tooltip
+  // applico le coordinate calcolate al tooltip
   tooltipDiv.style.left = `${left}px`;
   tooltipDiv.style.top = `${top}px`;
   tooltipDiv.style.display = "block";
   tooltipDiv.setAttribute("aria-hidden", "false");
 
-  // highlight hovered point slightly by redrawing with bigger radius for that point
+  // ridisegno la mappa e metto in evidenza il vulcano selezionato
   redrawAll();
-  // draw highlight overlay
   pushHighlight(p.x, p.y, v);
 }
 
+// disegna un effetto di "bagliore" attorno al vulcano selezionato
 function pushHighlight(x, y, v) {
-  // draw a glow circle over canvas (works because we call this right after redrawAll)
   drawingContext.save();
   drawingContext.shadowBlur = 22;
   drawingContext.shadowColor = "rgba(255,255,255,0.12)";
   noStroke();
-  fill(255, 255, 255, 36);
+  fill(255, 255, 255, 36); // cerchio bianco semi-trasparente
   ellipse(x, y, v.rSize * 1.8, v.rSize * 1.8);
   drawingContext.restore();
 }
 
+// nasconde il tooltip e ridisegna la mappa
 function hideTooltip() {
   if (!tooltipDiv) tooltipDiv = document.getElementById("tooltip");
   tooltipDiv.style.display = "none";
